@@ -133,6 +133,14 @@ class AlphaEngine:
             f"[{symbol}] {signal} score={score:.3f} kelly={kelly:.3f} | {reason or 'all_hold'}"
         )
 
+        # Cache last votes per symbol for dashboard
+        if not hasattr(self, "_last_votes"):
+            self._last_votes = {}
+        self._last_votes[symbol] = {
+            k: {"signal": v["signal"], "conf": round(v["conf"], 3)}
+            for k, v in breakdown.items()
+        }
+
         return Signal(symbol, signal, score, kelly, breakdown, reason)
 
     def _aggregate(self, votes: dict[str, Vote]) -> tuple[str, float, dict]:

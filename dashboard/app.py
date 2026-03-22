@@ -157,6 +157,17 @@ async def ws_endpoint(ws: WebSocket):
                 except Exception:
                     pass
 
+            # Last strategy votes from alpha engine
+            votes = {}
+            try:
+                for sym in ["BTCUSDT", "ETHUSDT"]:
+                    last = getattr(_bot._alpha, "_last_votes", {}).get(sym, {})
+                    if last:
+                        votes = last
+                        break
+            except Exception:
+                pass
+
             await ws.send_text(json.dumps({
                 "portfolio_value": round(pv, 2),
                 "total_pnl":       summary["total_pnl"],
@@ -167,6 +178,7 @@ async def ws_endpoint(ws: WebSocket):
                 "cycle":           _bot._cycle,
                 "prices":          prices,
                 "equity_point":    {"time": now, "value": round(pv, 2)},
+                "votes":           votes,
             }))
     except WebSocketDisconnect:
         pass

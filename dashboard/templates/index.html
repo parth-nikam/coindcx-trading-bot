@@ -4,67 +4,86 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nexus Trading System</title>
-<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root {
   --bg:#0d0f14; --card:#161b22; --border:#21262d;
   --green:#3fb950; --red:#f85149; --yellow:#d29922; --blue:#58a6ff;
-  --text:#e6edf3; --muted:#8b949e; --purple:#bc8cff;
+  --text:#e6edf3; --muted:#8b949e;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:'SF Mono','Fira Code',monospace;font-size:13px;overflow-x:hidden}
-header{padding:14px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px}
-header h1{font-size:17px;color:var(--blue);letter-spacing:3px;font-weight:700}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
-.tag{font-size:10px;color:var(--muted);letter-spacing:1px}
-.prices{margin-left:auto;display:flex;gap:20px}
-.price-item{text-align:right}
-.price-item .sym{font-size:10px;color:var(--muted)}
-.price-item .val{font-size:14px;font-weight:700;color:var(--blue)}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'SF Mono','Fira Code',monospace;font-size:13px}
 
-/* Stats row */
-.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;padding:16px 24px}
-.stat{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px}
-.stat .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
-.stat .val{font-size:20px;font-weight:700}
+/* Header */
+header{height:48px;padding:0 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;flex-shrink:0}
+header h1{font-size:16px;color:var(--blue);letter-spacing:3px;font-weight:700}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+.tag{font-size:10px;color:var(--muted);letter-spacing:1px}
+.prices{margin-left:auto;display:flex;gap:24px}
+.px{text-align:right}
+.px .sym{font-size:10px;color:var(--muted)}
+.px .val{font-size:15px;font-weight:700;color:var(--blue);font-variant-numeric:tabular-nums}
+.px .chg{font-size:10px}
+
+/* Layout */
+.layout{display:flex;height:calc(100vh - 48px);overflow:hidden}
+
+/* Left sidebar */
+.sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sb-section{padding:12px;border-bottom:1px solid var(--border)}
+.sb-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.stat-row .lbl{font-size:11px;color:var(--muted)}
+.stat-row .val{font-size:13px;font-weight:700}
 .pos{color:var(--green)} .neg{color:var(--red)} .neu{color:var(--blue)} .warn{color:var(--yellow)}
 
-/* Charts */
-.charts{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 24px 16px}
-.chart-card{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
-.chart-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.chart-header .title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
-.chart-header select{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:11px;font-family:inherit}
-.chart-body{height:260px}
-
-/* Full-width equity chart */
-.equity-wrap{padding:0 24px 16px}
-.equity-card{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
-.equity-body{height:160px}
-
-/* Tables */
-.tables{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 24px 16px}
-.tbl-card{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
-.tbl-header{padding:10px 14px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:7px 12px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
-th{font-size:10px;color:var(--muted);text-transform:uppercase}
-td{font-size:12px}
-.empty{color:var(--muted);padding:14px 12px;font-size:12px}
-
 /* Controls */
-.controls{padding:0 24px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-select.sym-sel{background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-family:inherit;font-size:13px}
-button{padding:8px 20px;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:opacity .15s}
+.ctrl-group{display:flex;flex-direction:column;gap:6px;padding:12px}
+select.sym-sel{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:5px;padding:6px 8px;font-family:inherit;font-size:12px;width:100%}
+.btn-row{display:flex;gap:6px}
+button{flex:1;padding:7px 0;border:none;border-radius:5px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;transition:opacity .15s}
 button:hover{opacity:.8}
 .btn-buy{background:var(--green);color:#000}
 .btn-sell{background:var(--red);color:#fff}
-.btn-halt{background:var(--yellow);color:#000}
+.btn-halt{background:var(--yellow);color:#000;flex:none;width:100%}
+
+/* Positions table */
+.pos-table{width:100%;border-collapse:collapse;font-size:11px}
+.pos-table th{color:var(--muted);font-size:10px;text-transform:uppercase;padding:4px 8px;text-align:left}
+.pos-table td{padding:5px 8px;border-top:1px solid var(--border)}
+
+/* Main area */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* Chart tabs */
+.chart-tabs{display:flex;align-items:center;gap:0;border-bottom:1px solid var(--border);flex-shrink:0;padding:0 12px}
+.tab{padding:10px 16px;font-size:12px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.tab-spacer{flex:1}
+.chart-opts{display:flex;gap:8px;align-items:center;padding:6px 0}
+.chart-opts select{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 8px;font-size:11px;font-family:inherit}
+
+/* TradingView widget container */
+.tv-wrap{flex:1;position:relative;overflow:hidden}
+.tv-wrap iframe,.tv-wrap .tradingview-widget-container,.tv-wrap .tradingview-widget-container__widget{width:100%!important;height:100%!important}
+
+/* Bottom panel */
+.bottom{height:180px;flex-shrink:0;border-top:1px solid var(--border);display:flex;overflow:hidden}
+.bottom-panel{flex:1;overflow:hidden;display:flex;flex-direction:column;border-right:1px solid var(--border)}
+.bottom-panel:last-child{border-right:none}
+.bp-header{padding:8px 12px;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);flex-shrink:0}
+.bp-body{flex:1;overflow-y:auto}
+table.bt{width:100%;border-collapse:collapse;font-size:11px}
+table.bt th{color:var(--muted);font-size:10px;text-transform:uppercase;padding:5px 10px;text-align:left;position:sticky;top:0;background:var(--card)}
+table.bt td{padding:5px 10px;border-top:1px solid var(--border)}
+.empty-row td{color:var(--muted);font-style:italic}
+
+/* Equity chart */
+#equityChart{width:100%;height:100%}
 
 /* Log */
-.log-wrap{padding:0 24px 24px}
-#log{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;height:100px;overflow-y:auto;font-size:11px;color:var(--muted);line-height:1.6}
+#log{padding:8px 12px;font-size:10px;color:var(--muted);line-height:1.7;overflow-y:auto;height:100%}
 </style>
 </head>
 <body>
@@ -74,198 +93,193 @@ button:hover{opacity:.8}
   <h1>NEXUS</h1>
   <span class="tag" id="statusTag">connecting...</span>
   <div class="prices">
-    <div class="price-item"><div class="sym">BTC/USDT</div><div class="val" id="pBTC">—</div></div>
-    <div class="price-item"><div class="sym">ETH/USDT</div><div class="val" id="pETH">—</div></div>
+    <div class="px"><div class="sym">BTC/USDT</div><div class="val" id="pBTC">—</div><div class="chg" id="cBTC"></div></div>
+    <div class="px"><div class="sym">ETH/USDT</div><div class="val" id="pETH">—</div><div class="chg" id="cETH"></div></div>
   </div>
 </header>
 
-<div class="stats">
-  <div class="stat"><div class="lbl">Portfolio</div><div class="val neu" id="sPV">—</div></div>
-  <div class="stat"><div class="lbl">Total PnL</div><div class="val" id="sPNL">—</div></div>
-  <div class="stat"><div class="lbl">Win Rate</div><div class="val pos" id="sWR">—</div></div>
-  <div class="stat"><div class="lbl">Drawdown</div><div class="val" id="sDD">—</div></div>
-  <div class="stat"><div class="lbl">Trades</div><div class="val neu" id="sTrades">—</div></div>
-  <div class="stat"><div class="lbl">Cycle</div><div class="val neu" id="sCycle">—</div></div>
-</div>
+<div class="layout">
 
-<!-- Candlestick charts -->
-<div class="charts">
-  <div class="chart-card">
-    <div class="chart-header">
-      <span class="title" id="c1title">BTCUSDT</span>
-      <select id="c1interval" onchange="reloadCandles('c1','BTCUSDT',this.value)">
-        <option value="1m">1m</option>
-        <option value="5m" selected>5m</option>
-        <option value="15m">15m</option>
-        <option value="1h">1h</option>
-      </select>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">Portfolio</div>
+      <div class="stat-row"><span class="lbl">Value</span><span class="val neu" id="sPV">—</span></div>
+      <div class="stat-row"><span class="lbl">PnL</span><span class="val" id="sPNL">—</span></div>
+      <div class="stat-row"><span class="lbl">Win Rate</span><span class="val pos" id="sWR">—</span></div>
+      <div class="stat-row"><span class="lbl">Drawdown</span><span class="val" id="sDD">—</span></div>
+      <div class="stat-row"><span class="lbl">Trades</span><span class="val neu" id="sTrades">—</span></div>
+      <div class="stat-row"><span class="lbl">Cycle</span><span class="val neu" id="sCycle">—</span></div>
     </div>
-    <div class="chart-body" id="c1"></div>
-  </div>
-  <div class="chart-card">
-    <div class="chart-header">
-      <span class="title" id="c2title">ETHUSDT</span>
-      <select id="c2interval" onchange="reloadCandles('c2','ETHUSDT',this.value)">
-        <option value="1m">1m</option>
-        <option value="5m" selected>5m</option>
-        <option value="15m">15m</option>
-        <option value="1h">1h</option>
-      </select>
+
+    <div class="sb-section">
+      <div class="sb-title">Open Positions</div>
+      <table class="pos-table">
+        <thead><tr><th>Sym</th><th>Side</th><th>PnL</th></tr></thead>
+        <tbody id="tPos"><tr><td colspan="3" style="color:var(--muted);padding:6px 8px;font-size:11px">None</td></tr></tbody>
+      </table>
     </div>
-    <div class="chart-body" id="c2"></div>
+
+    <div class="ctrl-group">
+      <div class="sb-title" style="padding:0 0 6px">Controls</div>
+      <select class="sym-sel" id="ctrlSym">
+        <option value="BTCUSDT">BTCUSDT</option>
+        <option value="ETHUSDT">ETHUSDT</option>
+      </select>
+      <div class="btn-row">
+        <button class="btn-buy"  onclick="ctrl('buy')">▲ BUY</button>
+        <button class="btn-sell" onclick="ctrl('sell')">▼ SELL</button>
+      </div>
+      <button class="btn-halt" onclick="ctrl('halt')">⏹ HALT BOT</button>
+    </div>
+
+    <div style="padding:12px;flex:1;overflow-y:auto">
+      <div class="sb-title">Activity</div>
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="chart-tabs">
+      <div class="tab active" onclick="switchTab('btc',this)">BTC/USDT</div>
+      <div class="tab" onclick="switchTab('eth',this)">ETH/USDT</div>
+      <div class="tab" onclick="switchTab('equity',this)">Equity Curve</div>
+      <div class="tab-spacer"></div>
+    </div>
+
+    <!-- TradingView BTC -->
+    <div class="tv-wrap" id="tabBtc">
+      <div class="tradingview-widget-container" style="height:100%;width:100%">
+        <div id="tv_btc" style="height:100%;width:100%"></div>
+      </div>
+    </div>
+
+    <!-- TradingView ETH -->
+    <div class="tv-wrap" id="tabEth" style="display:none">
+      <div class="tradingview-widget-container" style="height:100%;width:100%">
+        <div id="tv_eth" style="height:100%;width:100%"></div>
+      </div>
+    </div>
+
+    <!-- Equity curve tab -->
+    <div class="tv-wrap" id="tabEquity" style="display:none">
+      <canvas id="equityChart"></canvas>
+    </div>
+
+    <!-- Bottom panels -->
+    <div class="bottom">
+      <div class="bottom-panel" style="flex:1.4">
+        <div class="bp-header">Recent Trades</div>
+        <div class="bp-body">
+          <table class="bt">
+            <thead><tr><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>Fee</th></tr></thead>
+            <tbody id="tTrades"><tr class="empty-row"><td colspan="5">No trades yet</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="bottom-panel" style="flex:1">
+        <div class="bp-header">Strategy Votes (last cycle)</div>
+        <div class="bp-body">
+          <table class="bt">
+            <thead><tr><th>Strategy</th><th>Signal</th><th>Conf</th></tr></thead>
+            <tbody id="tVotes"><tr class="empty-row"><td colspan="3">Waiting...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
-<!-- Equity curve -->
-<div class="equity-wrap">
-  <div class="equity-card">
-    <div class="chart-header"><span class="title">Portfolio Equity Curve</span></div>
-    <div class="equity-body" id="equityChart"></div>
-  </div>
-</div>
-
-<!-- Tables -->
-<div class="tables">
-  <div class="tbl-card">
-    <div class="tbl-header">Open Positions</div>
-    <table><thead><tr><th>Symbol</th><th>Side</th><th>Qty</th><th>Entry</th><th>PnL</th></tr></thead>
-    <tbody id="tPos"></tbody></table>
-  </div>
-  <div class="tbl-card">
-    <div class="tbl-header">Recent Trades</div>
-    <table><thead><tr><th>Symbol</th><th>Side</th><th>Qty</th><th>Price</th><th>Fee</th></tr></thead>
-    <tbody id="tTrades"></tbody></table>
-  </div>
-</div>
-
-<!-- Controls -->
-<div class="controls">
-  <select class="sym-sel" id="ctrlSym">
-    <option value="BTCUSDT">BTCUSDT</option>
-    <option value="ETHUSDT">ETHUSDT</option>
-  </select>
-  <button class="btn-buy"  onclick="ctrl('buy')">▲ FORCE BUY</button>
-  <button class="btn-sell" onclick="ctrl('sell')">▼ FORCE SELL</button>
-  <button class="btn-halt" onclick="ctrl('halt')">⏹ HALT</button>
-</div>
-
-<div class="log-wrap">
-  <div id="log"></div>
-</div>
+<!-- TradingView widget script -->
+<script src="https://s3.tradingview.com/tv.js"></script>
+<!-- Lightweight Charts for equity curve -->
+<script src="https://unpkg.com/lightweight-charts@4.1.3/dist/lightweight-charts.standalone.production.js"></script>
 
 <script>
-// ── Chart setup ───────────────────────────────────────────────────────────────
-const CHART_OPTS = {
-  layout:     { background: { color: '#161b22' }, textColor: '#8b949e' },
-  grid:       { vertLines: { color: '#21262d' }, horzLines: { color: '#21262d' } },
-  crosshair:  { mode: 1 },
-  rightPriceScale: { borderColor: '#21262d' },
-  timeScale:  { borderColor: '#21262d', timeVisible: true, secondsVisible: false },
-  handleScroll: true,
-  handleScale:  true,
-};
-
-const charts = {};
-const candleSeries = {};
-const volumeSeries = {};
-
-function makeChart(containerId) {
-  const el = document.getElementById(containerId);
-  const chart = LightweightCharts.createChart(el, {
-    ...CHART_OPTS,
-    width:  el.clientWidth,
-    height: el.clientHeight,
+// ── TradingView widgets ───────────────────────────────────────────────────────
+function makeTVWidget(containerId, symbol) {
+  return new TradingView.widget({
+    container_id:    containerId,
+    symbol:          `BINANCE:${symbol}`,
+    interval:        '5',
+    timezone:        'Etc/UTC',
+    theme:           'dark',
+    style:           '1',           // candlestick
+    locale:          'en',
+    toolbar_bg:      '#161b22',
+    enable_publishing: false,
+    hide_top_toolbar: false,
+    hide_legend:     false,
+    save_image:      true,
+    studies: [
+      'MASimple@tv-basicstudies',   // MA
+      'RSI@tv-basicstudies',        // RSI
+      'MACD@tv-basicstudies',       // MACD
+      'BB@tv-basicstudies',         // Bollinger Bands
+      'Volume@tv-basicstudies',     // Volume
+    ],
+    show_popup_button: true,
+    popup_width:     '1000',
+    popup_height:    '650',
+    withdateranges:  true,
+    allow_symbol_change: true,
+    details:         true,
+    hotlist:         true,
+    calendar:        true,
+    width:           '100%',
+    height:          '100%',
+    autosize:        true,
   });
-  new ResizeObserver(() => chart.applyOptions({ width: el.clientWidth, height: el.clientHeight }))
-    .observe(el);
-  return chart;
 }
 
-// BTC chart
-charts.c1 = makeChart('c1');
-candleSeries.c1 = charts.c1.addCandlestickSeries({
-  upColor: '#3fb950', downColor: '#f85149',
-  borderUpColor: '#3fb950', borderDownColor: '#f85149',
-  wickUpColor: '#3fb950', wickDownColor: '#f85149',
-});
-volumeSeries.c1 = charts.c1.addHistogramSeries({
-  color: '#58a6ff', priceFormat: { type: 'volume' },
-  priceScaleId: 'vol', scaleMargins: { top: 0.8, bottom: 0 },
-});
+// Init both widgets immediately (hidden ones still load)
+const tvBTC = makeTVWidget('tv_btc', 'BTCUSDT');
+const tvETH = makeTVWidget('tv_eth', 'ETHUSDT');
 
-// ETH chart
-charts.c2 = makeChart('c2');
-candleSeries.c2 = charts.c2.addCandlestickSeries({
-  upColor: '#3fb950', downColor: '#f85149',
-  borderUpColor: '#3fb950', borderDownColor: '#f85149',
-  wickUpColor: '#3fb950', wickDownColor: '#f85149',
+// ── Equity curve (Lightweight Charts) ────────────────────────────────────────
+const equityEl = document.getElementById('equityChart');
+const equityChart = LightweightCharts.createChart(equityEl, {
+  layout:     { background: { color: '#0d0f14' }, textColor: '#8b949e' },
+  grid:       { vertLines: { color: '#21262d' }, horzLines: { color: '#21262d' } },
+  crosshair:  { mode: LightweightCharts.CrosshairMode.Normal },
+  rightPriceScale: { borderColor: '#21262d' },
+  timeScale:  { borderColor: '#21262d', timeVisible: true },
+  width:      equityEl.clientWidth || 800,
+  height:     equityEl.clientHeight || 300,
 });
-volumeSeries.c2 = charts.c2.addHistogramSeries({
-  color: '#58a6ff', priceFormat: { type: 'volume' },
-  priceScaleId: 'vol', scaleMargins: { top: 0.8, bottom: 0 },
-});
-
-// Equity chart
-const equityChart = LightweightCharts.createChart(document.getElementById('equityChart'), {
-  ...CHART_OPTS,
-  width:  document.getElementById('equityChart').clientWidth,
-  height: 160,
-});
-new ResizeObserver(() => equityChart.applyOptions({ width: document.getElementById('equityChart').clientWidth }))
-  .observe(document.getElementById('equityChart'));
 const equitySeries = equityChart.addAreaSeries({
-  lineColor: '#58a6ff', topColor: 'rgba(88,166,255,0.3)',
+  lineColor: '#58a6ff', topColor: 'rgba(88,166,255,0.25)',
   bottomColor: 'rgba(88,166,255,0)', lineWidth: 2,
 });
 
-// ── Load candles ──────────────────────────────────────────────────────────────
-async function loadCandles(chartId, symbol, interval) {
-  try {
-    const res = await fetch(`/api/candles/${symbol}?interval=${interval}&limit=150`);
-    const data = await res.json();
-    const candles = data.map(d => ({
-      time:  Math.floor(d.time / 1000),
-      open:  d.open, high: d.high, low: d.low, close: d.close,
-    }));
-    const vols = data.map(d => ({
-      time:  Math.floor(d.time / 1000),
-      value: d.volume,
-      color: d.close >= d.open ? 'rgba(63,185,80,0.4)' : 'rgba(248,81,73,0.4)',
-    }));
-    candleSeries[chartId].setData(candles);
-    volumeSeries[chartId].setData(vols);
-    charts[chartId].timeScale().fitContent();
-  } catch(e) { log(`Chart error: ${e.message}`); }
+new ResizeObserver(() => {
+  equityChart.applyOptions({ width: equityEl.clientWidth, height: equityEl.clientHeight });
+}).observe(equityEl);
+
+// Load existing equity history
+fetch('/api/equity').then(r => r.json()).then(data => {
+  if (data.length) equitySeries.setData(data);
+});
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tabBtc').style.display    = name === 'btc'    ? 'flex' : 'none';
+  document.getElementById('tabEth').style.display    = name === 'eth'    ? 'flex' : 'none';
+  document.getElementById('tabEquity').style.display = name === 'equity' ? 'flex' : 'none';
+  if (name === 'equity') {
+    equityChart.applyOptions({ width: equityEl.clientWidth, height: equityEl.clientHeight });
+  }
 }
-
-function reloadCandles(chartId, symbol, interval) {
-  loadCandles(chartId, symbol, interval);
-}
-
-// Load equity history
-async function loadEquity() {
-  try {
-    const res = await fetch('/api/equity');
-    const data = await res.json();
-    if (data.length > 0) equitySeries.setData(data);
-  } catch(e) {}
-}
-
-// Initial load
-loadCandles('c1', 'BTCUSDT', '5m');
-loadCandles('c2', 'ETHUSDT', '5m');
-loadEquity();
-
-// Refresh candles every 30s
-setInterval(() => {
-  loadCandles('c1', 'BTCUSDT', document.getElementById('c1interval').value);
-  loadCandles('c2', 'ETHUSDT', document.getElementById('c2interval').value);
-}, 30000);
 
 // ── WebSocket ─────────────────────────────────────────────────────────────────
-let ws;
+let prevBTC = 0, prevETH = 0;
+
 function connectWS() {
-  ws = new WebSocket(`ws://${location.host}/ws`);
+  const ws = new WebSocket(`ws://${location.host}/ws`);
+
   ws.onopen = () => {
     document.getElementById('dot').style.background = 'var(--green)';
     document.getElementById('statusTag').textContent = 'live';
@@ -279,18 +293,18 @@ function connectWS() {
   ws.onmessage = (e) => {
     const d = JSON.parse(e.data);
 
-    // Prices
+    // Prices + change indicator
     if (d.prices) {
-      if (d.prices.BTCUSDT) document.getElementById('pBTC').textContent = '$' + d.prices.BTCUSDT.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
-      if (d.prices.ETHUSDT) document.getElementById('pETH').textContent = '$' + d.prices.ETHUSDT.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+      updatePrice('pBTC', 'cBTC', d.prices.BTCUSDT, prevBTC);
+      updatePrice('pETH', 'cETH', d.prices.ETHUSDT, prevETH);
+      prevBTC = d.prices.BTCUSDT || prevBTC;
+      prevETH = d.prices.ETHUSDT || prevETH;
     }
 
     // Stats
-    set('sPV', '$' + (d.portfolio_value ?? 0).toLocaleString(undefined, {minimumFractionDigits:2}));
+    set('sPV', '$' + fmt(d.portfolio_value, 2));
     const pnl = d.total_pnl ?? 0;
-    const pnlEl = document.getElementById('sPNL');
-    pnlEl.textContent = (pnl >= 0 ? '+' : '') + pnl.toFixed(4);
-    pnlEl.className = 'val ' + (pnl >= 0 ? 'pos' : 'neg');
+    setColored('sPNL', (pnl >= 0 ? '+' : '') + pnl.toFixed(4), pnl >= 0);
     set('sWR', ((d.win_rate ?? 0) * 100).toFixed(1) + '%');
     const dd = d.drawdown_pct ?? 0;
     const ddEl = document.getElementById('sDD');
@@ -300,16 +314,35 @@ function connectWS() {
     set('sCycle', d.cycle ?? 0);
 
     // Equity point
-    if (d.equity_point) {
-      equitySeries.update(d.equity_point);
-    }
+    if (d.equity_point) equitySeries.update(d.equity_point);
+
+    // Strategy votes
+    if (d.votes) renderVotes(d.votes);
   };
 }
 connectWS();
 
-function set(id, val) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = val;
+function updatePrice(valId, chgId, price, prev) {
+  if (!price) return;
+  const el = document.getElementById(valId);
+  const chgEl = document.getElementById(chgId);
+  el.textContent = '$' + price.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+  if (prev) {
+    const pct = ((price - prev) / prev * 100);
+    chgEl.textContent = (pct >= 0 ? '▲ +' : '▼ ') + pct.toFixed(3) + '%';
+    chgEl.style.color = pct >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+}
+
+function fmt(v, d=2) {
+  return (v ?? 0).toLocaleString(undefined, {minimumFractionDigits:d, maximumFractionDigits:d});
+}
+function set(id, val) { const e = document.getElementById(id); if(e) e.textContent = val; }
+function setColored(id, val, positive) {
+  const e = document.getElementById(id);
+  if (!e) return;
+  e.textContent = val;
+  e.className = 'val ' + (positive ? 'pos' : 'neg');
 }
 
 // ── Tables ────────────────────────────────────────────────────────────────────
@@ -320,38 +353,49 @@ async function refreshTables() {
       fetch('/api/trades').then(r => r.json()),
     ]);
 
-    const posBody = document.getElementById('tPos');
+    // Positions sidebar
     const entries = Object.entries(pos);
-    if (!entries.length) {
-      posBody.innerHTML = '<tr><td colspan="5" class="empty">No open positions</td></tr>';
-    } else {
-      posBody.innerHTML = entries.map(([sym, p]) => `<tr>
-        <td>${sym}</td>
-        <td style="color:${p.side==='BUY'?'var(--green)':'var(--red)'}">${p.side}</td>
-        <td>${(p.quantity??0).toFixed(6)}</td>
-        <td>${(p.entry_price??0).toFixed(2)}</td>
-        <td style="color:${(p.unrealized_pnl??0)>=0?'var(--green)':'var(--red)'}">${(p.unrealized_pnl??0).toFixed(4)}</td>
-      </tr>`).join('');
-    }
+    const posBody = document.getElementById('tPos');
+    posBody.innerHTML = entries.length
+      ? entries.map(([sym, p]) => `<tr>
+          <td>${sym.replace('USDT','')}</td>
+          <td style="color:${p.side==='BUY'?'var(--green)':'var(--red)'}">${p.side}</td>
+          <td style="color:${(p.unrealized_pnl??0)>=0?'var(--green)':'var(--red)'}">${(p.unrealized_pnl??0).toFixed(3)}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="3" style="color:var(--muted);padding:6px 8px;font-size:11px">None</td></tr>';
 
+    // Trades bottom panel
     const tradeBody = document.getElementById('tTrades');
-    const recent = trades.slice(-8).reverse();
-    if (!recent.length) {
-      tradeBody.innerHTML = '<tr><td colspan="5" class="empty">No trades yet</td></tr>';
-    } else {
-      tradeBody.innerHTML = recent.map(t => `<tr>
-        <td>${t.symbol}</td>
-        <td style="color:${t.side==='BUY'?'var(--green)':'var(--red)'}">${t.side}</td>
-        <td>${(t.qty??0).toFixed(6)}</td>
-        <td>${(t.price??0).toFixed(2)}</td>
-        <td>${(t.fee??0).toFixed(4)}</td>
-      </tr>`).join('');
-    }
-  } catch(e) { log(`Table error: ${e.message}`); }
+    const recent = trades.slice(-12).reverse();
+    tradeBody.innerHTML = recent.length
+      ? recent.map(t => `<tr>
+          <td>${t.symbol}</td>
+          <td style="color:${t.side==='BUY'?'var(--green)':'var(--red)'}">${t.side}</td>
+          <td>${(t.qty??0).toFixed(6)}</td>
+          <td>${(t.price??0).toFixed(2)}</td>
+          <td>${(t.fee??0).toFixed(4)}</td>
+        </tr>`).join('')
+      : '<tr class="empty-row"><td colspan="5">No trades yet</td></tr>';
+
+  } catch(e) { log(`Error: ${e.message}`); }
 }
 
 setInterval(refreshTables, 5000);
 refreshTables();
+
+// ── Strategy votes ────────────────────────────────────────────────────────────
+function renderVotes(votes) {
+  const body = document.getElementById('tVotes');
+  const rows = Object.entries(votes).map(([name, v]) => {
+    const color = v.signal === 'BUY' ? 'var(--green)' : v.signal === 'SELL' ? 'var(--red)' : 'var(--muted)';
+    return `<tr>
+      <td>${name}</td>
+      <td style="color:${color};font-weight:700">${v.signal}</td>
+      <td>${(v.conf * 100).toFixed(0)}%</td>
+    </tr>`;
+  });
+  body.innerHTML = rows.join('') || '<tr class="empty-row"><td colspan="3">Waiting...</td></tr>';
+}
 
 // ── Controls ──────────────────────────────────────────────────────────────────
 async function ctrl(action) {
@@ -362,14 +406,14 @@ async function ctrl(action) {
     body: JSON.stringify({action, symbol}),
   });
   const data = await res.json();
-  log(`Control → ${JSON.stringify(data)}`);
+  log(`${action.toUpperCase()} ${symbol} → ${JSON.stringify(data)}`);
 }
 
 // ── Log ───────────────────────────────────────────────────────────────────────
 function log(msg) {
   const el = document.getElementById('log');
   const ts = new Date().toLocaleTimeString();
-  el.innerHTML = `<div>[${ts}] ${msg}</div>` + el.innerHTML;
+  el.innerHTML = `<div style="margin-bottom:3px">[${ts}] ${msg}</div>` + el.innerHTML;
 }
 </script>
 </body>
