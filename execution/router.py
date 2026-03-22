@@ -26,6 +26,26 @@ class OrderRouter:
         self._ex   = exchange
         self._risk = risk
 
+    async def process_market(self, signal: Signal) -> bool:
+        """Force a market order — used for manual overrides from dashboard."""
+        symbol = signal.symbol
+        allowed, reason = self._risk.can_open(symbol)
+        if not allowed:
+            logger.info(f"[ROUTER] Force blocked: {reason}")
+            return False
+        price = await self._ex.get_ticker(symbol)
+        qty   = self._risk.size_position(price, signal.kelly_f)
+        if qty <= 0:
+            return False
+        side = OrderSide.BUY if signal.action == "BUY" else OrderSide.SELL
+        order = Order(symbol=symbol, side=side, type=OrderType.MARKET, quantity=round(qty, 6))
+        logger.info(f"[ROUTER] FORCE MARKET {side.value} {qty:.6f} {symbol}")
+        filled = await self._ex.place_order(order)
+        if filled.status.value in ("FILLED", "PARTIAL"):
+            self._risk.record_open(symbol, side.value, filled.avg_price, filled.filled_qty)
+            return True
+        return False
+
     async def process(self, signal: Signal) -> bool:
         """
         Process a signal. Returns True if an order was placed.

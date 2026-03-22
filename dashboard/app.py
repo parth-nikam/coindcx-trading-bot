@@ -121,7 +121,11 @@ async def control(body: dict):
             symbol=symbol, action=action.upper(),
             score=1.0, kelly_f=0.05, breakdown={}, reason="manual_override",
         )
-        asyncio.create_task(_bot._router.process(sig))
+        # Force trades use market orders — cancel any queued limit first
+        open_orders = await _bot._exchange.get_open_orders(symbol)
+        for o in open_orders:
+            await _bot._exchange.cancel_order(symbol, o.order_id)
+        asyncio.create_task(_bot._router.process_market(sig))
         return {"ok": True, "action": action, "symbol": symbol}
 
     return {"error": f"unknown action: {action}"}

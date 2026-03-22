@@ -118,6 +118,9 @@ class NexusBot:
         while self._running:
             try:
                 await self._router.check_exits(config.SYMBOLS)
+                # Fill any queued limit orders in paper mode
+                if config.PAPER_TRADING:
+                    await self._exchange.check_limit_fills()
             except Exception as e:
                 logger.error(f"Exit checker error: {e}")
             await asyncio.sleep(EXIT_INTERVAL)

@@ -32,8 +32,8 @@ MAX_DAILY_LOSS_PCT = 5.0   # halt trading if daily drawdown > 5%
 MAX_DRAWDOWN_PCT   = 15.0  # halt if portfolio drawdown > 15%
 
 # ── Strategy voting ───────────────────────────────────────────────────────────
-BUY_THRESHOLD  = 0.50      # weighted score to fire BUY
-SELL_THRESHOLD = 0.50
+BUY_THRESHOLD  = 0.35      # weighted score to fire BUY
+SELL_THRESHOLD = 0.35
 
 # ── Infrastructure ────────────────────────────────────────────────────────────
 REDIS_URL  = os.getenv("REDIS_URL", "redis://localhost:6379")

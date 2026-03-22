@@ -186,6 +186,20 @@ class PaperExchange(AbstractExchange):
     async def get_open_orders(self, symbol: str) -> list[Order]:
         return [o for o in self._orders.values() if o.symbol == symbol]
 
+    async def check_limit_fills(self):
+        """Check if any queued limit orders are now fillable."""
+        for oid, order in list(self._orders.items()):
+            try:
+                price = await self.get_ticker(order.symbol)
+                if order.side == OrderSide.BUY and price <= order.price:
+                    await self._fill_order(order, order.price)
+                    del self._orders[oid]
+                elif order.side == OrderSide.SELL and price >= order.price:
+                    await self._fill_order(order, order.price)
+                    del self._orders[oid]
+            except Exception:
+                pass
+
     # ── Portfolio snapshot ────────────────────────────────────────────────────
 
     async def portfolio_value(self) -> float:
