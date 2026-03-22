@@ -83,17 +83,27 @@ async def trades():
 async def positions():
     if not _bot:
         return {}
-    return {
-        sym: {
+    result = {}
+    for sym, pos in _bot._risk.open_positions.items():
+        try:
+            current_price = await _bot._exchange.get_ticker(sym)
+        except Exception:
+            current_price = pos.entry_price
+        mult = 1 if pos.side == "BUY" else -1
+        unrealized = mult * (current_price - pos.entry_price) * pos.quantity
+        result[sym] = {
             "side":           pos.side,
-            "quantity":       pos.quantity,
-            "entry_price":    pos.entry_price,
-            "current_price":  pos.current_price,
-            "unrealized_pnl": pos.unrealized_pnl,
+            "quantity":       round(pos.quantity, 6),
+            "entry_price":    round(pos.entry_price, 4),
+            "current_price":  round(current_price, 4),
+            "unrealized_pnl": round(unrealized, 4),
+            "stop_loss":      round(pos.stop_loss, 4),
+            "take_profit":    round(pos.take_profit, 4),
+            "trail_active":   pos.trail_active,
+            "trail_stop":     round(pos.trail_stop, 4) if pos.trail_active else None,
             "strategy":       pos.strategy,
         }
-        for sym, pos in _bot._risk.open_positions.items()
-    }
+    return result
 
 
 @app.get("/api/candles/{symbol}")
@@ -159,7 +169,6 @@ async def control(body: dict):
     symbol = body.get("symbol", "BTCUSDT").upper()
 
     if action == "halt":
-        _bot.stop()
         _bot._risk.halt("manual_dashboard")
         _add_alert("warn", "Bot halted via dashboard")
         return {"ok": True, "action": "halt"}
@@ -226,6 +235,9 @@ async def ws_endpoint(ws: WebSocket):
                 except Exception:
                     pass
 
+            # Unrealized PnL
+            unrealized = _bot._risk.unrealized_pnl(prices)
+
             # Strategy votes
             votes = {}
             try:
@@ -247,6 +259,7 @@ async def ws_endpoint(ws: WebSocket):
             await ws.send_text(json.dumps({
                 "portfolio_value": round(pv, 2),
                 "total_pnl":       summary["total_pnl"],
+                "unrealized_pnl":  round(unrealized, 4),
                 "win_rate":        summary["win_rate"],
                 "drawdown_pct":    summary["drawdown_pct"],
                 "trade_count":     summary["trade_count"],
