@@ -63,18 +63,12 @@ class BaseStrategy(ABC):
 
     @staticmethod
     def pivot_lows(s: pd.Series, left: int = 5, right: int = 5) -> pd.Series:
-        out = pd.Series(np.nan, index=s.index)
-        for i in range(left, len(s) - right):
-            w = s.iloc[i - left: i + right + 1]
-            if s.iloc[i] == w.min():
-                out.iloc[i] = s.iloc[i]
-        return out
+        """Vectorized pivot low detection — O(n) via rolling min."""
+        roll_min = s.rolling(left + right + 1, center=True).min()
+        return s.where(s == roll_min)
 
     @staticmethod
     def pivot_highs(s: pd.Series, left: int = 5, right: int = 5) -> pd.Series:
-        out = pd.Series(np.nan, index=s.index)
-        for i in range(left, len(s) - right):
-            w = s.iloc[i - left: i + right + 1]
-            if s.iloc[i] == w.max():
-                out.iloc[i] = s.iloc[i]
-        return out
+        """Vectorized pivot high detection — O(n) via rolling max."""
+        roll_max = s.rolling(left + right + 1, center=True).max()
+        return s.where(s == roll_max)

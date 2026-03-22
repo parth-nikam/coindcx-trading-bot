@@ -27,18 +27,21 @@ logger = get_logger(__name__)
 
 @dataclass
 class TradeRecord:
-    symbol:       str
-    side:         str
-    entry_price:  float
-    quantity:     float
-    stop_loss:    float
-    take_profit:  float
-    strategy:     str   = "unknown"   # attribution
-    entry_time:   float = field(default_factory=time.time)
-    exit_price:   float = 0.0
-    pnl:          float = 0.0
-    hold_seconds: float = 0.0
-    open:         bool  = True
+    symbol:        str
+    side:          str
+    entry_price:   float
+    quantity:      float
+    stop_loss:     float
+    take_profit:   float
+    strategy:      str   = "unknown"   # attribution
+    entry_time:    float = field(default_factory=time.time)
+    exit_price:    float = 0.0
+    pnl:           float = 0.0
+    hold_seconds:  float = 0.0
+    open:          bool  = True
+    trail_active:  bool  = False       # trailing stop activated
+    trail_stop:    float = 0.0         # current trailing stop level
+    peak_price:    float = 0.0         # highest (BUY) or lowest (SELL) seen
 
 
 @dataclass
@@ -153,8 +156,11 @@ class PortfolioRisk:
         t = self._open_trades.get(symbol)
         if not t:
             return False
-        return (t.side == "BUY"  and current_price <= t.stop_loss) or \
-               (t.side == "SELL" and current_price >= t.stop_loss)
+        # Update trailing stop if active
+        self._update_trailing(t, current_price)
+        stop = t.trail_stop if t.trail_active else t.stop_loss
+        return (t.side == "BUY"  and current_price <= stop) or \
+               (t.side == "SELL" and current_price >= stop)
 
     def should_take_profit(self, symbol: str, current_price: float) -> bool:
         t = self._open_trades.get(symbol)
@@ -162,6 +168,28 @@ class PortfolioRisk:
             return False
         return (t.side == "BUY"  and current_price >= t.take_profit) or \
                (t.side == "SELL" and current_price <= t.take_profit)
+
+    def _update_trailing(self, t: "TradeRecord", price: float):
+        """Activate and update trailing stop once profit threshold is hit."""
+        trail_pct = getattr(config, "TRAILING_STOP_PCT", 1.0) / 100
+        if t.side == "BUY":
+            if price > t.peak_price:
+                t.peak_price = price
+            profit_pct = (price - t.entry_price) / t.entry_price
+            if profit_pct >= trail_pct:
+                t.trail_active = True
+                new_trail = t.peak_price * (1 - trail_pct)
+                if new_trail > t.trail_stop:
+                    t.trail_stop = new_trail
+        else:  # SELL
+            if t.peak_price == 0 or price < t.peak_price:
+                t.peak_price = price
+            profit_pct = (t.entry_price - price) / t.entry_price
+            if profit_pct >= trail_pct:
+                t.trail_active = True
+                new_trail = t.peak_price * (1 + trail_pct)
+                if t.trail_stop == 0 or new_trail < t.trail_stop:
+                    t.trail_stop = new_trail
 
     # ── Position sizing ───────────────────────────────────────────────────────
 
@@ -208,6 +236,7 @@ class PortfolioRisk:
                 symbol=symbol, side=side, entry_price=price, quantity=qty,
                 stop_loss=price * sl_mult, take_profit=price * tp_mult,
                 strategy=strategy,
+                peak_price=price,  # initialize peak to entry
             )
         logger.info(
             f"[RISK] Opened {side} {qty:.6f} {symbol} @ {price:.4f} "
@@ -257,6 +286,15 @@ class PortfolioRisk:
     @property
     def open_positions(self) -> dict:
         return dict(self._open_trades)
+
+    def unrealized_pnl(self, prices: dict[str, float]) -> float:
+        """Calculate unrealized PnL across all open positions."""
+        total = 0.0
+        for sym, t in self._open_trades.items():
+            price = prices.get(sym, t.entry_price)
+            mult  = 1 if t.side == "BUY" else -1
+            total += mult * (price - t.entry_price) * t.quantity
+        return total
 
     def strategy_performance(self) -> dict:
         return {k: v.to_dict() for k, v in self._strategy_metrics.items()}
