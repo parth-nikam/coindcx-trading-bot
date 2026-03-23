@@ -1,6 +1,6 @@
-# Stochastic RSI — momentum oscillator with overbought/oversold + crossover
-# Edge: StochRSI is more sensitive than plain RSI — catches turns earlier.
-# v2: added mid-zone momentum signals, trend-aligned signals
+# Stochastic RSI — K/D crossover with EMA200 trend filter (ported from Go)
+# K crosses above D from oversold = BUY (only if above EMA200 or strong ADX)
+# K crosses below D from overbought = SELL (only if below EMA200 or strong ADX)
 
 import pandas as pd
 import ta
@@ -9,7 +9,7 @@ from .base import BaseStrategy, Vote
 
 class StochRSI(BaseStrategy):
     name   = "stoch_rsi"
-    weight = 0.11
+    weight = 0.15
 
     def vote(self, df: pd.DataFrame, ob=None) -> Vote:
         close = df["close"]
@@ -27,35 +27,37 @@ class StochRSI(BaseStrategy):
         if any(pd.isna(x) for x in [k0, k1, d0, d1]):
             return Vote("HOLD", 0.0)
 
-        # Trend context from EMA
-        e20 = self.ema(close, 20)
-        e50 = self.ema(close, 50)
-        trend_up = e20.iloc[-1] > e50.iloc[-1]
+        rsi = self.rsi(close, 14).iloc[-1]
+        adx_v, _, _ = self.adx(df, 14)
+        adx = adx_v.iloc[-1]
 
-        # Bullish crossover in oversold zone
-        if k1 < d1 and k0 > d0 and k0 < 0.30:
-            conf = min(1.0, (0.30 - k0) * 3.5 + 0.5)
-            if trend_up:
-                conf = min(1.0, conf + 0.1)
-            return Vote("BUY", conf, f"stoch_cross_up k={k0:.2f} d={d0:.2f}")
+        # EMA200 trend alignment
+        e200 = self.ema(close, 200).iloc[-1]
+        above_e200 = close.iloc[-1] > e200
+        below_e200 = close.iloc[-1] < e200
 
-        # Bearish crossover in overbought zone
-        if k1 > d1 and k0 < d0 and k0 > 0.70:
-            conf = min(1.0, (k0 - 0.70) * 3.5 + 0.5)
-            if not trend_up:
-                conf = min(1.0, conf + 0.1)
-            return Vote("SELL", conf, f"stoch_cross_dn k={k0:.2f} d={d0:.2f}")
+        # K crossing above D from oversold zone (< 0.30)
+        k_cross_up   = k0 > d0 and k1 <= d1
+        # K crossing below D from overbought zone (> 0.70)
+        k_cross_down = k0 < d0 and k1 >= d1
 
-        # Deep oversold / overbought without crossover
-        if k0 < 0.10 and d0 < 0.15:
-            return Vote("BUY",  0.50, f"stoch_oversold k={k0:.2f}")
-        if k0 > 0.90 and d0 > 0.85:
-            return Vote("SELL", 0.50, f"stoch_overbought k={k0:.2f}")
+        # Bullish: K crosses up from oversold, RSI not overbought
+        # Allow if above EMA200 OR ADX very strong (>30)
+        trend_ok = above_e200 or adx > 30
+        if k_cross_up and k1 < 0.30 and rsi < 68 and trend_ok:
+            base_conf = 0.78 if adx > 25 else 0.65
+            if not above_e200:
+                base_conf -= 0.10  # reduce confidence if against EMA200
+            conf = min(0.90, base_conf + (0.25 - k1) * 0.5)
+            return Vote("BUY", conf, f"srsi_bull k={k0:.2f} d={d0:.2f} rsi={rsi:.0f} adx={adx:.0f}")
 
-        # Mid-zone momentum: K rising from below 0.5 in uptrend
-        if k0 > 0.45 and k1 < 0.45 and trend_up:
-            return Vote("BUY",  0.40, f"stoch_mid_cross_up k={k0:.2f}")
-        if k0 < 0.55 and k1 > 0.55 and not trend_up:
-            return Vote("SELL", 0.40, f"stoch_mid_cross_dn k={k0:.2f}")
+        # Bearish: K crosses down from overbought, RSI not oversold
+        trend_ok_sell = below_e200 or adx > 30
+        if k_cross_down and k1 > 0.70 and rsi > 32 and trend_ok_sell:
+            base_conf = 0.78 if adx > 25 else 0.65
+            if not below_e200:
+                base_conf -= 0.10
+            conf = min(0.90, base_conf + (k1 - 0.75) * 0.5)
+            return Vote("SELL", conf, f"srsi_bear k={k0:.2f} d={d0:.2f} rsi={rsi:.0f} adx={adx:.0f}")
 
-        return Vote("HOLD", 0.0, f"k={k0:.2f} d={d0:.2f}")
+        return Vote("HOLD", 0.0, f"k={k0:.2f} d={d0:.2f} rsi={rsi:.0f}")

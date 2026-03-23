@@ -32,27 +32,21 @@ class EMARibbon(BaseStrategy):
         vol_ok  = vol_now > vol_avg * 0.8  # at least 80% of average
 
         if bull == 4:
-            conf = min(0.85, 0.60 + abs(slope) * 3)
+            conf = min(0.85, 0.65 + abs(slope) * 3)
             if vol_ok:
                 conf = min(0.85, conf + 0.05)
             return Vote("BUY",  conf, f"ribbon=bull slope={slope:.3f}%")
         if bear == 4:
-            conf = min(0.85, 0.60 + abs(slope) * 3)
+            conf = min(0.85, 0.65 + abs(slope) * 3)
             if vol_ok:
                 conf = min(0.85, conf + 0.05)
             return Vote("SELL", conf, f"ribbon=bear slope={slope:.3f}%")
 
-        # Partial alignment with strong slope
-        if bull >= 3 and slope > 0.02:
-            return Vote("BUY",  0.45, f"ribbon=partial-bull slope={slope:.3f}%")
-        if bear >= 3 and slope < -0.02:
-            return Vote("SELL", 0.45, f"ribbon=partial-bear slope={slope:.3f}%")
-
-        # EMA crossover signal (8 crosses 21)
+        # EMA crossover signal (8 crosses 21) — only when slope is meaningful
         e8_prev, e21_prev = e8.iloc[-2], e21.iloc[-2]
-        if e8_prev < e21_prev and v8 > v21:
-            return Vote("BUY",  0.55, f"ema_cross_up 8x21")
-        if e8_prev > e21_prev and v8 < v21:
-            return Vote("SELL", 0.55, f"ema_cross_dn 8x21")
+        if e8_prev < e21_prev and v8 > v21 and abs(slope) > 0.03:
+            return Vote("BUY",  0.60, f"ema_cross_up 8x21 slope={slope:.3f}%")
+        if e8_prev > e21_prev and v8 < v21 and abs(slope) > 0.03:
+            return Vote("SELL", 0.60, f"ema_cross_dn 8x21 slope={slope:.3f}%")
 
         return Vote("HOLD", 0.0, f"bull={bull} bear={bear}")

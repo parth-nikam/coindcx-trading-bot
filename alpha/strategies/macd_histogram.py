@@ -53,19 +53,9 @@ class MACDHistogram(BaseStrategy):
         if sig_cross_down and m0 > 0:
             return Vote("SELL", 0.70, f"sig_cross_dn above_zero h={h0:.4f}")
 
-        if hist_turning_up and sig_cross_up:
-            return Vote("BUY",  0.65, f"hist_turn_up+sig h={h0:.4f}")
-        if hist_turning_down and sig_cross_down:
-            return Vote("SELL", 0.65, f"hist_turn_dn+sig h={h0:.4f}")
-
-        if hist_accel_up:
-            return Vote("BUY",  0.50, f"hist_accel_up h={h0:.4f}")
-        if hist_accel_down:
-            return Vote("SELL", 0.50, f"hist_accel_dn h={h0:.4f}")
-
-        if hist_turning_up and h0 < 0:
-            return Vote("BUY",  0.40, f"hist_turn_up_neg h={h0:.4f}")
-        if hist_turning_down and h0 > 0:
-            return Vote("SELL", 0.40, f"hist_turn_dn_pos h={h0:.4f}")
+        if hist_accel_up and sig_cross_up:
+            return Vote("BUY",  0.65, f"hist_accel+sig h={h0:.4f}")
+        if hist_accel_down and sig_cross_down:
+            return Vote("SELL", 0.65, f"hist_accel+sig h={h0:.4f}")
 
         return Vote("HOLD", 0.0, f"macd={m0:.4f} sig={s0:.4f}")

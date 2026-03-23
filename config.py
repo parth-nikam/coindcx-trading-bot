@@ -20,7 +20,7 @@ INITIAL_CAPITAL = float(os.getenv("INITIAL_CAPITAL", "10000"))
 TRADE_SIZE_PCT  = 0.10      # base % of capital per trade (Kelly-adjusted)
 MAX_POSITIONS   = 3
 SLIPPAGE_BPS    = 5
-MIN_AGREEING    = 1         # minimum strategies that must agree to fire signal
+MIN_AGREEING    = 2         # minimum strategies that must agree to fire signal
 
 # ── Leverage ──────────────────────────────────────────────────────────────────
 LEVERAGE        = int(os.getenv("LEVERAGE", "3"))   # 1 = no leverage, 3 = 3x, etc.
@@ -37,8 +37,8 @@ MAX_DRAWDOWN_PCT   = 15.0
 TRAILING_STOP_PCT  = 1.0   # trailing stop activates after 1% profit
 
 # ── Strategy voting ───────────────────────────────────────────────────────────
-BUY_THRESHOLD  = 0.18   # lowered — more signal generation
-SELL_THRESHOLD = 0.18   # lowered
+BUY_THRESHOLD  = 0.28   # requires meaningful weighted agreement
+SELL_THRESHOLD = 0.28
 
 # ── Circuit breaker ───────────────────────────────────────────────────────────
 CIRCUIT_BREAKER_ERRORS   = 5    # consecutive errors before halting

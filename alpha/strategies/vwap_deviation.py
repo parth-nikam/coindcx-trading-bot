@@ -24,22 +24,16 @@ class VWAPDeviation(BaseStrategy):
         dev = (v - p) / a  # positive = price below VWAP (oversold vs VWAP)
         trend_up = e20.iloc[-1] > e20.iloc[-5]  # short-term trend direction
 
-        # Strong mean reversion signals
-        if dev > 2.5 and r < 38:
+        # Strong mean reversion signals only — require clear extremes
+        if dev > 2.5 and r < 35:
             return Vote("BUY",  min(1.0, dev / 4), f"dev={dev:.2f}σ RSI={r:.0f} strong_rev")
-        if dev < -2.5 and r > 62:
+        if dev < -2.5 and r > 65:
             return Vote("SELL", min(1.0, abs(dev) / 4), f"dev={dev:.2f}σ RSI={r:.0f} strong_rev")
 
-        # Moderate mean reversion
-        if dev > 1.5 and r < 45:
+        # Moderate mean reversion — tighter RSI requirement
+        if dev > 2.0 and r < 38:
             return Vote("BUY",  min(0.75, dev / 4), f"dev={dev:.2f}σ RSI={r:.0f}")
-        if dev < -1.5 and r > 55:
+        if dev < -2.0 and r > 62:
             return Vote("SELL", min(0.75, abs(dev) / 4), f"dev={dev:.2f}σ RSI={r:.0f}")
-
-        # Trend-following: price just crossed above VWAP with momentum
-        if dev < 0 and dev > -0.5 and trend_up and r > 50 and r < 70:
-            return Vote("BUY",  0.45, f"vwap_cross_up dev={dev:.2f} RSI={r:.0f}")
-        if dev > 0 and dev < 0.5 and not trend_up and r < 50 and r > 30:
-            return Vote("SELL", 0.45, f"vwap_cross_dn dev={dev:.2f} RSI={r:.0f}")
 
         return Vote("HOLD", 0.0, f"dev={dev:.2f}σ RSI={r:.0f}")
